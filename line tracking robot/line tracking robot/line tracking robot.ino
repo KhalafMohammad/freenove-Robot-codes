@@ -1,5 +1,6 @@
 #include "Servo.h" //include servo library
 #include "Freenove_WS2812B_RGBLED_Controller.h"
+#include <unistd.h>
 #define PIN_SERVO      2
 #define PIN_DIRECTION_LEFT  4
 #define PIN_DIRECTION_RIGHT 3
@@ -27,6 +28,9 @@
 #define SOUND_VELOCITY 340 //sound Velocity: 340m/s
 #define I2C_ADDRESS  0x20
 #define LEDS_COUNT   10  //it defines number of lEDs. 
+
+#define OBSTACLE_DISTANCE   60
+#define OBSTACLE_DISTANCE_LOW 30
 
 #define TK_STOP_SPEED          0
 #define TK_FORWARD_SPEED        (90 + tk_VoltageCompensationToSpeed)
@@ -85,27 +89,120 @@ void loop() {
     default:
       break;
   }
-  servo.write(20);
-    delay(1000);
-    distance[0] = getSonar(); //get ultrasonic value and save it into distance[0]
+  Leds_react_to_distance();
+//  LED_reaction();  
+}
 
-  servo.write(170);
-    delay(1000);
-    distance[2] = getSonar();
+// void LED_reaction(){
   
-  if (distance[0] > 30){    
-    strip.setLedColor(0, 0, 255, 0);
-    strip.setLedColor(1, 0, 255, 0);
-    strip.setLedColor(2, 0, 255, 0);
-    strip.setLedColor(3, 0, 255, 0);
-    strip.setLedColor(4, 0, 255, 0);
-    strip.setLedColor(5, 0, 0, 0);
-    strip.setLedColor(6, 0, 0, 0);
-    strip.setLedColor(7, 0, 0, 0);
-    strip.setLedColor(8, 0, 0, 0);
-    strip.setLedColor(9, 0, 0, 0);
-    strip.show();
-  }else if (distance[0] < 30) {
+//   servo.write(20);
+//   delay(1000);
+//     distance[0] = getSonar(); //get ultrasonic value and save it into distance[0]
+  
+//   servo.write(170);
+//   delay(1000);
+//     distance[2] = getSonar();
+  
+//   if (distance[0] > 30){ 
+//     strip.setLedColor(0, 0, 255, 0);
+//     strip.setLedColor(1, 0, 255, 0);
+//     strip.setLedColor(2, 0, 255, 0);
+//     strip.setLedColor(3, 0, 255, 0);
+//     strip.setLedColor(4, 0, 255, 0);
+//     strip.setLedColor(5, 0, 0, 0);
+//     strip.setLedColor(6, 0, 0, 0);
+//     strip.setLedColor(7, 0, 0, 0);
+//     strip.setLedColor(8, 0, 0, 0);
+//     strip.setLedColor(9, 0, 0, 0);
+//     strip.show();
+//   }else if (distance[0] < 30) {
+//     strip.setLedColor(0, 255, 0, 0);
+//     strip.setLedColor(1, 255, 0, 0);
+//     strip.setLedColor(2, 255, 0, 0);
+//     strip.setLedColor(3, 255, 0, 0);
+//     strip.setLedColor(4, 255, 0, 0);
+//     strip.setLedColor(5, 0, 0, 0);
+//     strip.setLedColor(6, 0, 0, 0);
+//     strip.setLedColor(7, 0, 0, 0);
+//     strip.setLedColor(8, 0, 0, 0);
+//     strip.setLedColor(9, 0, 0, 0);        
+//     strip.show();
+//     }
+//   if (distance[2] > 30){
+//     strip.setLedColor(0, 0, 0, 0);
+//     strip.setLedColor(1, 0, 0, 0);
+//     strip.setLedColor(2, 0, 0, 0);
+//     strip.setLedColor(3, 0, 0, 0);
+//     strip.setLedColor(4, 0, 0, 0);
+//     strip.setLedColor(5, 0, 255, 0);
+//     strip.setLedColor(6, 0, 255, 0);
+//     strip.setLedColor(7, 0, 255, 0);
+//     strip.setLedColor(8, 0, 255, 0);
+//     strip.setLedColor(9, 0, 255, 0);
+//     strip.show();
+//   }else if (distance[2] < 30) {
+//     strip.setLedColor(0, 0, 0, 0);
+//     strip.setLedColor(1, 0, 0, 0);
+//     strip.setLedColor(2, 0, 0, 0);
+//     strip.setLedColor(3, 0, 0, 0);
+//     strip.setLedColor(4, 0, 0, 0);
+//     strip.setLedColor(5, 255, 0, 0);
+//     strip.setLedColor(6, 255, 0, 0);
+//     strip.setLedColor(7, 255, 0, 0);
+//     strip.setLedColor(8, 255, 0, 0);
+//     strip.setLedColor(9, 255, 0, 0);
+//     strip.show();
+//   }else{
+//     strip.setAllLedsColor(0, 0, 255);
+//     strip.show();
+//   }  
+// }
+
+void Leds_react_to_distance() {
+  int distance[3], tempDistance[3][5], sumDisntance;
+  static u8 leftToRight = 0, servoAngle = 0, lastServoAngle = 0;
+  const u8 scanAngle[2][3] = { {170, 90, 20}, {20, 90, 170} };
+
+  for (int i = 0; i < 3; i++)
+  {
+    servoAngle = scanAngle[leftToRight][i];
+    servo.write(servoAngle);
+    if (lastServoAngle != servoAngle) {
+      delay(500);
+    }
+    lastServoAngle = servoAngle;
+    for (int j = 0; j < 5; j++) {
+      tempDistance[i][j] = getSonar();
+      delayMicroseconds(2 * SONIC_TIMEOUT);
+      sumDisntance += tempDistance[i][j];
+    }
+    if (leftToRight == 0) {
+      distance[i] = sumDisntance / 5;
+    }
+    else {
+      distance[2 - i] = sumDisntance / 5;
+    }
+    sumDisntance = 0;
+  }
+  leftToRight = (leftToRight + 1) % 2;
+
+                                                   //Too little distance ahead
+
+    if (distance[0] > OBSTACLE_DISTANCE_LOW) {                          // obstacle is far
+      strip.setLedColor(0, 0, 255, 0);
+      strip.setLedColor(1, 0, 255, 0);
+      strip.setLedColor(2, 0, 255, 0);
+      strip.setLedColor(3, 0, 255, 0);
+      strip.setLedColor(4, 0, 255, 0);
+      strip.setLedColor(5, 0, 0, 0);
+      strip.setLedColor(6, 0, 0, 0);
+      strip.setLedColor(7, 0, 0, 0);
+      strip.setLedColor(8, 0, 0, 0);
+      strip.setLedColor(9, 0, 0, 0);
+      strip.show();
+
+    }
+    else if (distance[0] <  OBSTACLE_DISTANCE_LOW) {                 //Obstacle is near
     strip.setLedColor(0, 255, 0, 0);
     strip.setLedColor(1, 255, 0, 0);
     strip.setLedColor(2, 255, 0, 0);
@@ -118,7 +215,12 @@ void loop() {
     strip.setLedColor(9, 0, 0, 0);        
     strip.show();
     }
-  if (distance[2] > 30){
+    else {
+    strip.setAllLedsColor(0, 0, 0);                              //set all LED off .
+    strip.show();
+    }
+
+    if (distance[2] > OBSTACLE_DISTANCE_LOW) {                   // obstacle is far
     strip.setLedColor(0, 0, 0, 0);
     strip.setLedColor(1, 0, 0, 0);
     strip.setLedColor(2, 0, 0, 0);
@@ -130,7 +232,8 @@ void loop() {
     strip.setLedColor(8, 0, 255, 0);
     strip.setLedColor(9, 0, 255, 0);
     strip.show();
-  }else if (distance[2] < 30) {
+    }
+    else if (distance[2] <  OBSTACLE_DISTANCE_LOW) {              //Obstacle is near
     strip.setLedColor(0, 0, 0, 0);
     strip.setLedColor(1, 0, 0, 0);
     strip.setLedColor(2, 0, 0, 0);
@@ -142,10 +245,12 @@ void loop() {
     strip.setLedColor(8, 255, 0, 0);
     strip.setLedColor(9, 255, 0, 0);
     strip.show();
-  }else{
-    strip.setAllLedsColor(0, 0, 255);    //set all LED off .
+    }
+    else {
+    strip.setAllLedsColor(0, 0, 0);                                //set all LED off .
     strip.show();
-  }   
+    }
+
 }
 
 void tk_CalculateVoltageCompensation() {
