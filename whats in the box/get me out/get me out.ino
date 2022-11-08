@@ -34,6 +34,7 @@
 Servo servo;
 byte servoOffset = 0;
 int speedOffset;//batteryVoltageCompensationToSpeed
+u8 distance[4];
 
 float getSonar() {
   unsigned long pingTime;
@@ -99,72 +100,87 @@ void setup() {
 }
 
 void loop() {
-  // updateAutomaticObstacleAvoidance();
-  int distance[3], tempDistance[3][5], sumDisntance;
-  static u8 leftToRight = 0, servoAngle = 0, lastServoAngle = 0;
-  const u8 scanAngle[2][3] = { {179, 90, 2}, {2, 90, 179} };
+  // int distance[3], tempDistance[3][5], sumDisntance;
+  // static u8 leftToRight = 0, servoAngle = 0, lastServoAngle = 0;
+  // const u8 scanAngle[2][3] = { {179, 90, 2}, {2, 90, 179} };
 
-  for (int i = 0; i < 3; i++)
-  {
-    servoAngle = scanAngle[leftToRight][i];
-    servo.write(servoAngle);
-    if (lastServoAngle != servoAngle) {
-      delay(150);
-    }
-    lastServoAngle = servoAngle;
-    for (int j = 0; j < 5; j++) {
-      tempDistance[i][j] = getSonar();
-      delayMicroseconds(2 * SONIC_TIMEOUT);
-      sumDisntance += tempDistance[i][j];
-    }
-    if (leftToRight == 0) {
-      distance[i] = sumDisntance / 5;
-    }
-    else {
-      distance[2 - i] = sumDisntance / 5;
-    }
-    sumDisntance = 0;
-  }
-  leftToRight = (leftToRight + 1) % 2;
-
-  // Serial.print("Distance L / M / R: "); //Left/Middle/Right/Middle2
-  // for (int i = 0; i < 3; i++) {
-  // Serial.print(distance[i]); //print ultrasonic in 45°, 90°, 135°, 90°
-  // Serial.print("/");
+  // for (int i = 0; i < 3; i++)
+  // {
+  //   servoAngle = scanAngle[leftToRight][i];
+  //   servo.write(servoAngle);
+  //   if (lastServoAngle != servoAngle) {
+  //     delay(150);
+  //   }
+  //   lastServoAngle = servoAngle;
+  //   for (int j = 0; j < 5; j++) {
+  //     tempDistance[i][j] = getSonar();
+  //     delayMicroseconds(2 * SONIC_TIMEOUT);
+  //     sumDisntance += tempDistance[i][j];
+  //   }
+  //   if (leftToRight == 0) {
+  //     distance[i] = sumDisntance / 5;
+  //   }
+  //   else {
+  //     distance[2 - i] = sumDisntance / 5;
+  //   }
+  //   sumDisntance = 0;
   // }
-  // Serial.print("\n");
- 
-  if (distance[0] < 30 || distance[2] < 30 || distance[1] < 30) {
-    motorRun(0, 0);
+  // leftToRight = (leftToRight + 1) % 2;
+
+  servo.write(179 + servoOffset);
+  delay(1000);
+  distance[2] = getSonar();
+  servo.write(2 + servoOffset);
+  delay(1000);
+  distance[0] = getSonar();
+  servo.write(90 + servoOffset);
+  delay(1000);
+  distance[1] = getSonar();
+  
+// ifdef DEBUG
+// Serial.print("Distance L / M / R :   ");  //Left/Middle/Right/Middle2
+//   for (int i = 0; i < 3; i++) {
+//     Serial.print(distance[i]);
+//     Serial.print("/");
+//   }
+//   Serial.print('\n');  //next content will be printed in new line
+// enddef 
+
+  if (distance[0] < 40 || distance[2] < 40 || distance[1] < 40) {
+    motorRun(0,0);  //car stop
+    servo.write(179 + servoOffset);
+    delay(1000);
+    distance[2] = getSonar();
+    servo.write(2 + servoOffset);
+    delay(1000);
+    distance[0] = getSonar();
+    servo.write(90 + servoOffset);
+    delay(1000);
+    distance[1] = getSonar();
+
+    
       if (distance[0] < distance[2]) {
-       motorRun((150 + speedOffset), -(150 + speedOffset));
-        delay(500);
+       motorRun(-(150 + speedOffset), (150 + speedOffset));
+        delay(250);
         motorRun(0, 0);
       }
-      else if (distance[0] > distance[2]) {
-        motorRun(-(150 + speedOffset), (150 + speedOffset));
-        delay(500);
+      if (distance[0] > distance[2]) {
+        motorRun((150 + speedOffset), -(150 + speedOffset));
+        delay(250);
         motorRun(0, 0);
       }
-      else if (distance[1] > distance[2] && distance[1] > distance[0]) {
-        motorRun((150 + speedOffset), (150 + speedOffset));
-        delay(250);
+      // if (distance[1] > distance[2]) {
+      //   motorRun((150 + speedOffset) ,(150 + speedOffset));
+      //   delay(250);
+      //   motorRun(0 , 0);
+      // }
+      if (distance[1] > distance[2] && distance[1] > distance[0]) {
+        motorRun((150 + speedOffset) ,(150 + speedOffset));
+        delay(150);
         motorRun(0 , 0);
-      }
-      else if (distance[0] == distance[2]){
-        motorRun(-(150 + speedOffset), -(150 + speedOffset));
-        delay(250);
-        motorRun(0 , 0);        
-      }
-        
-      else{
-        motorRun((150 + speedOffset), (150 + speedOffset));
-        delay(250);
-        motorRun(0 , 0);
-        
       }
   }
-  else{
+  else if(distance[1]>50 && distance[2] > 50 && distance[0] > 50){
     motorRun(120, 120);
     delay(2000);
     motorRun(200, -200);

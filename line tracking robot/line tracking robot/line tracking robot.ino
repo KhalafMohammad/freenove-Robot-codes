@@ -77,14 +77,15 @@ void loop() {
     case 2:   //010
       motorRun(TK_FORWARD_SPEED, TK_FORWARD_SPEED);  //car move forward
       break;
-    case 0: //111
+    case 0: //111 car stop
     case 5:   //101
       motorRun(TK_STOP_SPEED, TK_STOP_SPEED);  //car stop
-      Leds_react_to_distance();
-      motorRun(100, 100);
+      Leds_react_to_distance(); // when the car stops it scans and lights the LEDs.
+      motorRun(100, 100); // then it moves a bit forward to catsh the line and follow it.
       delay(100);
       motorRun(0,0);
-      servo.write(90);
+      strip.setAllLedsColor(0,0,0); // after scanning the robot shuts the the LEDs off until the next stop.
+      strip.show();
       break;
     case 6:   //110
       motorRun(TK_TURN_SPEED_LV2, TK_TURN_SPEED_LV3); //car turn left
@@ -130,7 +131,7 @@ void Leds_react_to_distance() {
 
                                                    //Too little distance ahead
 
-    if (distance[0] > OBSTACLE_DISTANCE) {                          // obstacle is far
+    if (distance[0] > OBSTACLE_DISTANCE) {                          // obstacle is far light GREEN
       strip.setLedColor(0, 0, 255, 0);
       strip.setLedColor(1, 0, 255, 0);
       strip.setLedColor(2, 0, 255, 0);
@@ -144,7 +145,7 @@ void Leds_react_to_distance() {
       strip.show();
 
     }
-    else if (distance[0] >  OBSTACLE_DISTANCE_LOW && distance[0] < OBSTACLE_DISTANCE) {                 //Obstacle is near
+    else if (distance[0] >  OBSTACLE_DISTANCE_LOW && distance[0] < OBSTACLE_DISTANCE) {                 //Obstacle is near and too far light BLUE
     strip.setLedColor(0, 0, 0, 255);
     strip.setLedColor(1, 0, 0, 255);
     strip.setLedColor(2, 0, 0, 255);
@@ -157,7 +158,7 @@ void Leds_react_to_distance() {
     strip.setLedColor(9, 0, 0, 0);        
     strip.show();
     }
-    else if (distance[0] <  OBSTACLE_DISTANCE_LOW) {                 //Obstacle is near
+    else if (distance[0] <  OBSTACLE_DISTANCE_LOW) {                 //Obstacle is near light RED
     strip.setLedColor(0, 255, 0, 0);
     strip.setLedColor(1, 255, 0, 0);
     strip.setLedColor(2, 255, 0, 0);
@@ -171,11 +172,11 @@ void Leds_react_to_distance() {
     strip.show();
     }
     else {
-    strip.setAllLedsColor(0, 0, 0);                              //set all LED off .
+    strip.setAllLedsColor(0, 0, 0);                              //set all LED off.
     strip.show();
     }
 
-    if (distance[2] > OBSTACLE_DISTANCE) {                   // obstacle is far
+    if (distance[2] > OBSTACLE_DISTANCE) {                   // obstacle is far light GREEN
     strip.setLedColor(0, 0, 0, 0);
     strip.setLedColor(1, 0, 0, 0);
     strip.setLedColor(2, 0, 0, 0);
@@ -188,7 +189,7 @@ void Leds_react_to_distance() {
     strip.setLedColor(9, 0, 255, 0);
     strip.show();
     }
-    else if (distance[2] >  OBSTACLE_DISTANCE_LOW && distance[2] < OBSTACLE_DISTANCE) {                 //Obstacle is near
+    else if (distance[2] >  OBSTACLE_DISTANCE_LOW && distance[2] < OBSTACLE_DISTANCE) {                 //Obstacle is near and not too far light BLUE
     strip.setLedColor(0, 0, 0, 0);
     strip.setLedColor(1, 0, 0, 0);
     strip.setLedColor(2, 0, 0, 0);
@@ -201,7 +202,7 @@ void Leds_react_to_distance() {
     strip.setLedColor(9, 0, 0, 255);        
     strip.show();
     }
-    else if (distance[2] <  OBSTACLE_DISTANCE_LOW) {              //Obstacle is near
+    else if (distance[2] <  OBSTACLE_DISTANCE_LOW) {              //Obstacle is near light RED
     strip.setLedColor(0, 0, 0, 0);
     strip.setLedColor(1, 0, 0, 0);
     strip.setLedColor(2, 0, 0, 0);
